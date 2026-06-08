@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Linear Regression in Excel — Gravity Trade Workbook</title>
+<meta name="description" content="A hands-on linear regression lesson you run yourself in Excel, built on 200 real country-pair trade flows from BACI and the CEPII Gravity database.">
+<script>
+  MathJax = { tex: { inlineMath: [['$','$']], displayMath: [['$$','$$']] } };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<style>
+  :root{
+    --ink:#1A1A2E; --slate:#2C3E50; --rust:#C0392B; --sage:#1E8449;
+    --gold:#B8860B; --cream:#FDF6E3; --paper:#FBFBF7; --line:#E2E0D6;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:Georgia,'Times New Roman',serif;color:var(--ink);
+    background:var(--paper);line-height:1.65;font-size:18px}
+  .wrap{max-width:860px;margin:0 auto;padding:0 22px}
+  code,.mono{font-family:'SF Mono',Consolas,Menlo,monospace;font-size:.86em}
+  a{color:var(--rust)}
+  /* hero */
+  header{background:var(--ink);color:#fff;padding:54px 0 46px}
+  header .wrap{max-width:860px}
+  .eyebrow{font-family:Helvetica,Arial,sans-serif;letter-spacing:.16em;text-transform:uppercase;
+    font-size:12px;color:#C9B98F;margin:0 0 14px}
+  h1{font-size:40px;line-height:1.12;margin:0 0 14px;font-weight:700}
+  header p.lede{font-size:20px;color:#D8D8E0;margin:0 0 26px;max-width:680px}
+  .btns{display:flex;gap:12px;flex-wrap:wrap;margin-top:6px}
+  .btn{display:inline-block;font-family:Helvetica,Arial,sans-serif;font-weight:600;font-size:15px;
+    text-decoration:none;padding:12px 20px;border-radius:7px;transition:.15s}
+  .btn-primary{background:var(--rust);color:#fff}
+  .btn-primary:hover{background:#a93226}
+  .btn-ghost{background:transparent;color:#fff;border:1.5px solid #55556a}
+  .btn-ghost:hover{border-color:#9a9ab0}
+  /* sections */
+  section{padding:40px 0;border-bottom:1px solid var(--line)}
+  h2{font-size:27px;color:var(--slate);margin:0 0 6px}
+  h2 .num{color:var(--rust);font-family:Helvetica,Arial,sans-serif;font-size:16px;
+    font-weight:700;display:block;letter-spacing:.04em;margin-bottom:2px}
+  h3{font-size:19px;color:var(--rust);margin:26px 0 4px;font-family:Helvetica,Arial,sans-serif}
+  p{margin:12px 0}
+  .eq{background:var(--cream);border-left:4px solid var(--rust);padding:10px 18px;border-radius:4px;
+    overflow-x:auto;margin:18px 0;font-size:17px}
+  /* model cards */
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:24px 0 8px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:9px;padding:18px;
+    box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  .card .step{font-family:Helvetica,Arial,sans-serif;font-size:12px;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--gold);font-weight:700}
+  .card h4{margin:6px 0 10px;font-size:17px;color:var(--ink)}
+  .card .r2{font-size:34px;color:var(--sage);font-weight:700;font-family:Helvetica,Arial,sans-serif;line-height:1}
+  .card .r2 span{font-size:13px;color:#777;font-weight:400;display:block;font-family:Georgia,serif;margin-top:3px}
+  .card p{font-size:14.5px;color:#444;margin:10px 0 0}
+  /* table */
+  table{border-collapse:collapse;width:100%;margin:18px 0;font-size:15.5px;
+    font-family:Helvetica,Arial,sans-serif}
+  th,td{padding:9px 12px;border-bottom:1px solid var(--line);text-align:left}
+  th{background:var(--slate);color:#fff;font-weight:600}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+  tr:nth-child(even) td{background:#fff}
+  .pos{color:var(--sage);font-weight:600}.neg{color:var(--rust);font-weight:600}
+  /* calculator */
+  .calc{background:#fff;border:1px solid var(--line);border-radius:10px;padding:22px;margin-top:8px}
+  .calc .row{display:flex;align-items:center;gap:14px;margin:14px 0;flex-wrap:wrap}
+  .calc label{flex:0 0 230px;font-family:Helvetica,Arial,sans-serif;font-size:14.5px;color:var(--slate)}
+  .calc input[type=range]{flex:1;min-width:160px;accent-color:var(--rust)}
+  .calc .val{flex:0 0 130px;text-align:right;font-family:'SF Mono',Consolas,monospace;font-size:14px}
+  .readout{margin-top:20px;padding:18px;background:var(--ink);color:#fff;border-radius:8px;
+    display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:10px}
+  .readout .big{font-size:32px;font-weight:700;font-family:Helvetica,Arial,sans-serif;color:#7FD1A4}
+  .readout .lab{font-family:Helvetica,Arial,sans-serif;font-size:13px;color:#C9B98F;letter-spacing:.04em}
+  .note{font-size:14px;color:#666;font-style:italic;margin-top:10px}
+  /* tabs list */
+  .tabs{display:grid;grid-template-columns:1fr;gap:0;margin:16px 0}
+  .tabline{display:flex;gap:14px;padding:11px 0;border-bottom:1px solid var(--line);align-items:baseline}
+  .tabline b{flex:0 0 210px;font-family:Helvetica,Arial,sans-serif;font-size:15px;color:var(--rust)}
+  .tabline span{font-size:15.5px;color:#333}
+  .fn{display:inline-block;background:var(--cream);border:1px solid var(--line);border-radius:4px;
+    padding:1px 7px;margin:2px;font-family:'SF Mono',Consolas,monospace;font-size:13px;color:var(--ink)}
+  footer{padding:34px 0 50px;color:#666;font-size:14px}
+  footer a{color:var(--slate)}
+  @media(max-width:680px){
+    h1{font-size:30px}.cards{grid-template-columns:1fr}
+    .calc label{flex-basis:100%}.calc .val{flex-basis:100%;text-align:left}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <p class="eyebrow">Applied Statistics · Hands-on Excel</p>
+    <h1>Linear Regression in Excel</h1>
+    <p class="lede">A course you run yourself in a spreadsheet, built on 200 real country-pair
+      trade flows. Every number is a live formula. Estimate three regressions, read every
+      coefficient, and learn what each one means.</p>
+    <div class="btns">
+      <a class="btn btn-primary" href="Gravity_Regression_Workbook.xlsx" download>Download the workbook (.xlsx)</a>
+      <a class="btn btn-ghost" href="https://github.com/ihelfrich/gravity-regression-excel">View on GitHub</a>
+      <a class="btn btn-ghost" href="LESSON.md">Read the lesson</a>
+    </div>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <h2><span class="num">The puzzle</span>Why do some countries trade billions, and others almost nothing?</h2>
+    <p>There is an old answer borrowed from physics, called the gravity model. Two bodies attract
+      in proportion to their masses and in inverse proportion to the distance between them. Swap
+      mass for economic size and the analogy holds up well for trade: big economies trade more,
+      and distant economies trade less. Regression puts exact numbers on "more" and "less," and
+      lets us check whether the story survives contact with data.</p>
+    <div class="eq">$$\ln(\text{trade}) = a + b_1\ln(\text{distance}) + b_2\ln(\text{GDP}_{\text{exporter}}) + b_3\ln(\text{GDP}_{\text{importer}}) + \varepsilon$$</div>
+    <p>Because the variables are in logs, each slope is an <strong>elasticity</strong>: the percent
+      change in trade for a one percent change in the predictor. We build the model in three
+      passes, adding one idea at a time.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2><span class="num">The arc</span>Three models, and what each one adds</h2>
+    <div class="cards">
+      <div class="card">
+        <div class="step">Pass 1 · Simple</div>
+        <h4>Distance only</h4>
+        <div class="r2">0.06<span>R-squared</span></div>
+        <p>The distance elasticity is a real $-0.81$ with a sharp t-stat, yet it explains just
+          6 percent of why trade volumes differ. One variable is rarely the story.</p>
+      </div>
+      <div class="card">
+        <div class="step">Pass 2 · Multiple</div>
+        <h4>Add both economies' size</h4>
+        <div class="r2">0.35<span>R-squared</span></div>
+        <p>Both GDP elasticities land near 1, exactly what gravity predicts. R-squared jumps
+          sixfold. Size, not distance, was the missing piece.</p>
+      </div>
+      <div class="card">
+        <div class="step">Pass 3 · Dummies</div>
+        <h4>Add border, language, treaty</h4>
+        <div class="r2">0.41<span>R-squared</span></div>
+        <p>A trade agreement goes with roughly +208 percent more trade. A surprising negative
+          sign on borders becomes a lesson in itself.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2><span class="num">The full model</span>Reading the coefficients</h2>
+    <p>Estimated live in the workbook with <span class="fn">=LINEST(...)</span> and cross-checked
+      against an independent Python (<code>statsmodels</code>) run. They agree to the decimal.</p>
+    <table>
+      <thead><tr><th>Term</th><th class="num">Coefficient</th><th class="num">t-stat</th><th>How to read it</th></tr></thead>
+      <tbody>
+        <tr><td>ln_dist</td><td class="num neg">−0.72</td><td class="num">−3.25</td><td>distance elasticity: farther means less trade</td></tr>
+        <tr><td>ln_gdp (exporter)</td><td class="num pos">1.05</td><td class="num">7.17</td><td>exporter size, nearly one-for-one</td></tr>
+        <tr><td>ln_gdp (importer)</td><td class="num pos">0.97</td><td class="num">6.10</td><td>importer size, close behind</td></tr>
+        <tr><td>common language</td><td class="num pos">0.55</td><td class="num">1.94</td><td>about +73% trade (exact: $e^{b}-1$)</td></tr>
+        <tr><td>trade agreement</td><td class="num pos">1.13</td><td class="num">3.14</td><td>about +208% trade, more than triples</td></tr>
+        <tr><td>shared border</td><td class="num neg">−1.81</td><td class="num">−2.45</td><td>a backwards sign: a prompt to get more data, not a finding</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2><span class="num">Try it</span>Predict trade for any pair</h2>
+    <p>This calculator uses the fitted gravity model (Pass 2) straight from the workbook. Move the
+      sliders and watch the prediction update, exactly as the workbook's prediction cell does.</p>
+    <div class="calc">
+      <div class="row">
+        <label>Distance between capitals (km)</label>
+        <input id="d" type="range" min="200" max="18000" step="100" value="5000">
+        <div class="val" id="dv">5,000 km</div>
+      </div>
+      <div class="row">
+        <label>Exporter GDP (USD billions)</label>
+        <input id="gi" type="range" min="20" max="25000" step="20" value="1500">
+        <div class="val" id="giv">$1,500 bn</div>
+      </div>
+      <div class="row">
+        <label>Importer GDP (USD billions)</label>
+        <input id="gj" type="range" min="20" max="25000" step="20" value="1500">
+        <div class="val" id="gjv">$1,500 bn</div>
+      </div>
+      <div class="readout">
+        <div><div class="lab">PREDICTED ANNUAL TRADE</div><div class="big" id="out">—</div></div>
+        <div style="text-align:right"><div class="lab">ln(trade)</div><div class="mono" id="lnout" style="font-size:18px">—</div></div>
+      </div>
+      <p class="note">Model: ln_trade = −6.42 − 0.834·ln(dist) + 1.047·ln(GDP_i) + 0.892·ln(GDP_j).
+        Coefficients fitted on 200 real pairs; GDP entered in millions of USD to match the data.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2><span class="num">Inside the file</span>Seven tabs, in order</h2>
+    <div class="tabs">
+      <div class="tabline"><b>Start Here</b><span>Orientation, the function cheat-sheet, and how to switch on the Analysis ToolPak.</span></div>
+      <div class="tabline"><b>Data</b><span>The 200 observations. Columns are arranged so the regression variables sit together.</span></div>
+      <div class="tabline"><b>L1 Simple Regression</b><span>One predictor, a chart with a trendline, and a prediction calculator.</span></div>
+      <div class="tabline"><b>L2 Multiple Regression</b><span>The gravity equation with LINEST, and the reverse-order trap explained.</span></div>
+      <div class="tabline"><b>L3 Dummy Variables</b><span>Yes/no predictors read as percentage effects on trade.</span></div>
+      <div class="tabline"><b>Exercises</b><span>Five tasks. You write the formulas in the yellow cells.</span></div>
+      <div class="tabline"><b>Answer Key</b><span>Worked solutions, plus the same models in Python as a cross-check.</span></div>
+    </div>
+    <h3>Functions you will use</h3>
+    <p>
+      <span class="fn">=SLOPE(y, x)</span><span class="fn">=INTERCEPT(y, x)</span>
+      <span class="fn">=RSQ(y, x)</span><span class="fn">=CORREL(x, y)</span>
+      <span class="fn">=STEYX(y, x)</span><span class="fn">=LINEST(y, X, TRUE, TRUE)</span>
+      <span class="fn">=INDEX(LINEST(...), r, c)</span><span class="fn">=TDIST(ABS(t), df, 2)</span>
+      <span class="fn">=EXP(x)</span>
+    </p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2><span class="num">Provenance</span>Where the data comes from</h2>
+    <p>Trade values: BACI 2022 (CEPII), built on UN Comtrade. Distance, contiguity, common
+      language, colonial history, and trade-agreement membership: the CEPII Gravity database.
+      GDP: the World Bank's World Development Indicators. Each row is one directed exporter to
+      importer pair. The full column-by-column dictionary lives in
+      <a href="data/DATA_DICTIONARY.md">data/DATA_DICTIONARY.md</a>, and the whole workbook
+      rebuilds from <a href="build_workbook.py">build_workbook.py</a>.</p>
+    <div class="btns" style="margin-top:18px">
+      <a class="btn btn-primary" href="Gravity_Regression_Workbook.xlsx" download>Download the workbook</a>
+      <a class="btn btn-ghost" style="border-color:#bbb;color:var(--slate)" href="data/gravity_sample_200.csv" download>Download the raw data (CSV)</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p>A teaching resource by Dr. Ian Helfrich. Built with AI assistance and verified against an
+      independent statsmodels estimation. Released under the MIT License.
+      Source: <a href="https://github.com/ihelfrich/gravity-regression-excel">github.com/ihelfrich/gravity-regression-excel</a></p>
+  </div>
+</footer>
+
+<script>
+  // Fitted gravity model (Pass 2), coefficients from the workbook / statsmodels.
+  // GDP in the data is millions of USD; sliders are in billions, so multiply by 1000.
+  const A=-6.42242, B_DIST=-0.833768, B_GI=1.047143, B_GJ=0.891574;
+  const d=document.getElementById('d'), gi=document.getElementById('gi'), gj=document.getElementById('gj');
+  const dv=document.getElementById('dv'), giv=document.getElementById('giv'), gjv=document.getElementById('gjv');
+  const out=document.getElementById('out'), lnout=document.getElementById('lnout');
+  const fmt=n=>n.toLocaleString('en-US');
+  function money(thousandsUSD){
+    // workbook trade unit is thousands of USD
+    const usd=thousandsUSD*1000;
+    if(usd>=1e9) return '$'+(usd/1e9).toFixed(1)+' bn';
+    if(usd>=1e6) return '$'+(usd/1e6).toFixed(1)+' mn';
+    if(usd>=1e3) return '$'+(usd/1e3).toFixed(0)+'k';
+    return '$'+usd.toFixed(0);
+  }
+  function update(){
+    const dist=+d.value, gE=+gi.value, gI=+gj.value;
+    dv.textContent=fmt(dist)+' km';
+    giv.textContent='$'+fmt(gE)+' bn';
+    gjv.textContent='$'+fmt(gI)+' bn';
+    const lnTrade=A + B_DIST*Math.log(dist) + B_GI*Math.log(gE*1000) + B_GJ*Math.log(gI*1000);
+    lnout.textContent=lnTrade.toFixed(2);
+    out.textContent=money(Math.exp(lnTrade));
+  }
+  [d,gi,gj].forEach(el=>el.addEventListener('input',update));
+  update();
+</script>
+</body>
+</html>
