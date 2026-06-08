@@ -61,6 +61,11 @@ def note(ws, row, text, col=1, span=8, kind="concept"):
                                       right=thin, top=thin, bottom=thin)
     return c
 
+def text_cell(ws, row, col, s):
+    """Store a literal string even if it begins with '=' (display, not evaluate)."""
+    c = ws.cell(row, col); c.value = s; c.data_type = 's'
+    return c
+
 def hdr(ws, row, col, text):
     c = ws.cell(row, col, text); c.font = F(10, True, "FFFFFF"); c.fill = fill(HEADBG)
     c.alignment = ctr; c.border = box; return c
@@ -152,8 +157,8 @@ def linest_table(ws, top, y_name, x_name, vars_in_X, ref_key):
         ws.cell(r, 2, coef).number_format = "0.0000"
         ws.cell(r, 3, se).number_format = "0.0000"
         ws.cell(r, 4, f"=B{r}/C{r}").number_format = "0.000"
-        # two-sided p from t with df = n-k-1
-        ws.cell(r, 5, f"=T.DIST.2T(ABS(D{r}),{df_n}-{k}-1)").number_format = "0.0000"
+        # two-sided p from t with df = n-k-1 (legacy TDIST, tails=2)
+        ws.cell(r, 5, f"=TDIST(ABS(D{r}),{df_n}-{k}-1,2)").number_format = "0.0000"
         for cc in range(1, 6):
             ws.cell(r, cc).border = box; ws.cell(r, cc).font = F(10)
         ws.cell(r, 2).font = F(10, color=BLACK)
@@ -224,13 +229,13 @@ fns = [
     ("=STEYX(y, x)", "standard error of the y estimate"),
     ("=LINEST(y, Xrange, TRUE, TRUE)", "full multiple-regression output as a 5-row block"),
     ("=INDEX(LINEST(...), row, col)", "pull one number out of the LINEST block"),
-    ("=T.DIST.2T(ABS(t), df)", "two-sided p-value from a t-statistic"),
+    ("=TDIST(ABS(t), df, 2)", "two-sided p-value from a t-statistic"),
     ("=EXP(x)", "undo a natural log; turns a log coefficient into a multiplier"),
 ]
 hdr(ws, r, 2, "Function"); ws.merge_cells(start_row=r, start_column=3, end_row=r, end_column=7)
 hdr(ws, r, 3, "What it gives you"); r += 1
 for fn, desc in fns:
-    c = ws.cell(r, 2, fn); c.font = Font(name="Consolas", size=9); c.border = box; c.alignment = wrapL
+    c = text_cell(ws, r, 2, fn); c.font = Font(name="Consolas", size=9); c.border = box; c.alignment = wrapL
     ws.merge_cells(start_row=r, start_column=3, end_row=r, end_column=7)
     c2 = ws.cell(r, 3, desc); c2.font = F(10); c2.alignment = wrapL; c2.border = box
     r += 1
@@ -277,7 +282,7 @@ stats1 = [
     ("Observations  n", "=COUNT(ln_trade)", "0"),
     ("Std. error of slope", "=INDEX(LINEST(ln_trade, ln_dist, TRUE, TRUE), 2, 1)", "0.0000"),
     ("t-statistic for slope", "=C{slope}/C{se}", "0.000"),
-    ("p-value (is b ≠ 0?)", "=T.DIST.2T(ABS(C{t}),C{n}-2)", "0.0000"),
+    ("p-value (is b ≠ 0?)", "=TDIST(ABS(C{t}),C{n}-2,2)", "0.0000"),
 ]
 hdr(ws, r, 1, "Statistic"); hdr(ws, r, 3, "Value")
 ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=2)
@@ -299,9 +304,9 @@ note(ws, r, "Read it.  The slope is about -0.81: a country pair twice as far apa
 ws.row_dimensions[r].height = 60; r += 2
 
 section(ws, r, "Step 2 — Cross-check: the slope is just covariance / variance"); r += 1
-label(ws, r, 1, "COVARIANCE.P(x,y) / VAR.P(x)", b=False)
+label(ws, r, 1, "COVAR(x,y) / VARP(x)", b=False)
 ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=2)
-c = ws.cell(r, 3, "=COVARIANCE.P(ln_dist, ln_trade)/VAR.P(ln_dist)"); c.number_format = "0.0000"
+c = ws.cell(r, 3, "=COVAR(ln_dist, ln_trade)/VARP(ln_dist)"); c.number_format = "0.0000"
 c.font = F(10); c.border = box; ws.cell(r,1).border = box; ws.cell(r,2).border = box
 ws.cell(r, 5, "matches SLOPE above").font = F(9, it=True); r += 2
 
@@ -374,16 +379,17 @@ note(ws, r, "LINEST gives a block, not a single number. Coefficients come back R
      "last X column first, and the intercept LAST. That reversal is the classic trap. The table "
      "above already untangles it with INDEX; here is the raw block so you can see it.", span=6, kind="key")
 ws.row_dimensions[r].height = 44; r += 1
-# raw LINEST block 5x4 as an array formula
+# raw LINEST block 5x4, each cell pulled with INDEX so the naturally-empty
+# lower-right cells (which LINEST returns as #N/A) render blank instead.
 blk_top = r
 for j, t in enumerate(["col1 = ln_gdp_j", "col2 = ln_gdp_i", "col3 = ln_dist", "col4 = Intercept"]):
     hdr(ws, r, j + 1, t)
 r += 1
-ref = f"A{r}:D{r+4}"
-ws.cell(r, 1, ArrayFormula(ref, "=LINEST(ln_trade,X_grav,TRUE,TRUE)"))
-for rr in range(r, r + 5):
-    for cc in range(1, 5):
-        cell = ws.cell(rr, cc); cell.number_format = "0.0000"; cell.font = F(9); cell.border = box
+for rr in range(5):           # LINEST returns a 5-row block
+    for cc in range(4):       # 4 columns (3 predictors + intercept)
+        f = f'=IFERROR(INDEX(LINEST(ln_trade,X_grav,TRUE,TRUE),{rr+1},{cc+1}),"")'
+        cell = ws.cell(r + rr, cc + 1, f)
+        cell.number_format = "0.0000"; cell.font = F(9); cell.border = box
 rowlbls = ["row1 coefficients", "row2 std errors", "row3 R² & SE", "row4 F & df", "row5 SS"]
 for i, lab in enumerate(rowlbls):
     ws.cell(r + i, 6, lab).font = F(9, it=True)
@@ -455,7 +461,7 @@ def qa(r, qnum, prompt, cells):
         rr = r + off
         lc = ws.cell(rr, 3, lbl); lc.font = F(9, b=True); lc.alignment = Alignment(vertical="center")
         yc = ws.cell(rr, 4, ""); yc.fill = fill(YELLOW); yc.border = box
-        hc = ws.cell(rr, 5, hint); hc.font = F(8, it=True, color="808080"); hc.alignment = wrapL
+        hc = text_cell(ws, rr, 5, hint); hc.font = F(8, it=True, color="808080"); hc.alignment = wrapL
     return r + max(len(cells), 1) + 1
 
 r = qa(r, "Q1", "Regress ln_trade on ln_gdp_i ALONE (exporter size only). Report the slope and R-squared.",
@@ -489,7 +495,7 @@ sols = [
 ]
 for name, formula, fmt in sols:
     label(ws, r, 2, name, b=False); ws.cell(r,2).border = box
-    c = ws.cell(r, 3, formula); c.font = Font(name="Consolas", size=8); c.border = box; c.alignment = wrapL
+    c = text_cell(ws, r, 3, formula); c.font = Font(name="Consolas", size=8); c.border = box; c.alignment = wrapL
     res = ws.cell(r, 4, formula); res.number_format = fmt; res.font = F(10, True); res.border = box
     r += 1
 label(ws, r, 2, "Q5 (concept)", b=False); ws.cell(r,2).border = box
