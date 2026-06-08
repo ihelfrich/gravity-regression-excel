@@ -1,0 +1,118 @@
+{
+  "m1": {
+    "label": "Simple: ln_trade ~ ln_dist",
+    "y": "ln_trade",
+    "X": [
+      "ln_dist"
+    ],
+    "n": 200,
+    "r2": 0.0636,
+    "adj_r2": 0.0589,
+    "F": 13.46,
+    "coef": {
+      "const": 20.6792,
+      "ln_dist": -0.8071
+    },
+    "se": {
+      "const": 1.9239,
+      "ln_dist": 0.22
+    },
+    "t": {
+      "const": 10.748,
+      "ln_dist": -3.668
+    },
+    "p": {
+      "const": 0.0,
+      "ln_dist": 0.0003
+    }
+  },
+  "m2": {
+    "label": "Gravity: ln_trade ~ ln_dist + ln_gdp_i + ln_gdp_j",
+    "y": "ln_trade",
+    "X": [
+      "ln_dist",
+      "ln_gdp_i",
+      "ln_gdp_j"
+    ],
+    "n": 200,
+    "r2": 0.3515,
+    "adj_r2": 0.3416,
+    "F": 35.41,
+    "coef": {
+      "const": -6.4224,
+      "ln_dist": -0.8338,
+      "ln_gdp_i": 1.0471,
+      "ln_gdp_j": 0.8916
+    },
+    "se": {
+      "const": 3.3393,
+      "ln_dist": 0.1844,
+      "ln_gdp_i": 0.1499,
+      "ln_gdp_j": 0.1625
+    },
+    "t": {
+      "const": -1.923,
+      "ln_dist": -4.521,
+      "ln_gdp_i": 6.985,
+      "ln_gdp_j": 5.486
+    },
+    "p": {
+      "const": 0.0559,
+      "ln_dist": 0.0,
+      "ln_gdp_i": 0.0,
+      "ln_gdp_j": 0.0
+    }
+  },
+  "m3": {
+    "label": "Full: + dummies",
+    "y": "ln_trade",
+    "X": [
+      "ln_dist",
+      "ln_gdp_i",
+      "ln_gdp_j",
+      "contiguity",
+      "common_language",
+      "agree_fta"
+    ],
+    "n": 200,
+    "r2": 0.4111,
+    "adj_r2": 0.3928,
+    "F": 22.46,
+    "coef": {
+      "const": -8.8159,
+      "ln_dist": -0.7231,
+      "ln_gdp_i": 1.0451,
+      "ln_gdp_j": 0.9666,
+      "contiguity": -1.8062,
+      "common_language": 0.5453,
+      "agree_fta": 1.1252
+    },
+    "se": {
+      "const": 3.3952,
+      "ln_dist": 0.2224,
+      "ln_gdp_i": 0.1457,
+      "ln_gdp_j": 0.1585,
+      "contiguity": 0.738,
+      "common_language": 0.2809,
+      "agree_fta": 0.3586
+    },
+    "t": {
+      "const": -2.597,
+      "ln_dist": -3.251,
+      "ln_gdp_i": 7.173,
+      "ln_gdp_j": 6.098,
+      "contiguity": -2.447,
+      "common_language": 1.942,
+      "agree_fta": 3.138
+    },
+    "p": {
+      "const": 0.0101,
+      "ln_dist": 0.0014,
+      "ln_gdp_i": 0.0,
+      "ln_gdp_j": 0.0,
+      "contiguity": 0.0153,
+      "common_language": 0.0536,
+      "agree_fta": 0.002
+    }
+  }
+}
