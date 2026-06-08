@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Run It Yourself — Regressions in Excel, step by step</title>
+<style>
+  :root{
+    --ink:#1A1A2E; --slate:#2C3E50; --rust:#C0392B; --sage:#1E8449;
+    --gold:#B8860B; --cream:#FDF6E3; --paper:#FBFBF7; --line:#E2E0D6; --blue:#1F4E79;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:Georgia,'Times New Roman',serif;color:var(--ink);background:var(--paper);
+    line-height:1.6;font-size:17px}
+  .wrap{max-width:920px;margin:0 auto;padding:0 22px}
+  code,.mono{font-family:'SF Mono',Consolas,Menlo,monospace}
+  a{color:var(--rust)}
+  /* nav */
+  nav{position:sticky;top:0;z-index:50;background:var(--ink);color:#fff;
+    box-shadow:0 1px 8px rgba(0,0,0,.18)}
+  nav .wrap{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:9px 22px}
+  nav b{font-family:Helvetica,Arial,sans-serif;font-size:14px;margin-right:10px;color:#C9B98F}
+  nav a{color:#dcdce6;text-decoration:none;font-family:Helvetica,Arial,sans-serif;font-size:13.5px;
+    padding:5px 10px;border-radius:6px}
+  nav a:hover{background:#2c2c44;color:#fff}
+  /* hero */
+  header{background:linear-gradient(180deg,#22223c,#1A1A2E);color:#fff;padding:46px 0 38px}
+  .eyebrow{font-family:Helvetica,Arial,sans-serif;letter-spacing:.16em;text-transform:uppercase;
+    font-size:12px;color:#C9B98F;margin:0 0 12px}
+  h1{font-size:36px;line-height:1.12;margin:0 0 12px}
+  header p{font-size:19px;color:#D8D8E0;margin:0;max-width:720px}
+  section{padding:38px 0;border-bottom:1px solid var(--line)}
+  h2{font-size:26px;color:var(--slate);margin:0 0 4px}
+  h2 .num{color:var(--rust);font-family:Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;
+    display:block;letter-spacing:.05em;margin-bottom:2px}
+  h3{font-size:18px;color:var(--rust);margin:24px 0 6px;font-family:Helvetica,Arial,sans-serif}
+  p{margin:11px 0}
+  /* steps */
+  .step{display:flex;gap:16px;margin:18px 0;align-items:flex-start}
+  .step .n{flex:0 0 34px;height:34px;border-radius:50%;background:var(--rust);color:#fff;
+    font-family:Helvetica,Arial,sans-serif;font-weight:700;display:flex;align-items:center;
+    justify-content:center;font-size:16px;margin-top:2px}
+  .step .body{flex:1}
+  .formula{display:flex;align-items:stretch;gap:0;margin:8px 0;border:1px solid var(--line);
+    border-radius:7px;overflow:hidden;background:#fff}
+  .formula code{flex:1;padding:11px 14px;font-size:14.5px;color:var(--blue);background:#F7F9FB;
+    white-space:pre-wrap;word-break:break-word}
+  .formula button{border:0;border-left:1px solid var(--line);background:var(--cream);color:var(--ink);
+    font-family:Helvetica,Arial,sans-serif;font-size:13px;font-weight:600;padding:0 16px;cursor:pointer;
+    transition:.15s}
+  .formula button:hover{background:#f0e7c8}
+  .formula button.ok{background:var(--sage);color:#fff}
+  .see{background:var(--cream);border-left:4px solid var(--gold);padding:8px 14px;border-radius:4px;
+    font-size:15px;margin:8px 0}
+  .see b{color:var(--slate)}
+  .pill{display:inline-block;background:#eef3f7;border:1px solid #cdddea;border-radius:5px;
+    padding:1px 7px;font-family:'SF Mono',Consolas,monospace;font-size:13px;color:var(--blue)}
+  /* data table */
+  .tablebox{max-height:340px;overflow:auto;border:1px solid var(--line);border-radius:8px;background:#fff}
+  table.data{border-collapse:collapse;width:100%;font-family:Helvetica,Arial,sans-serif;font-size:13px}
+  table.data th{position:sticky;top:0;background:var(--slate);color:#fff;padding:7px 9px;text-align:right;
+    white-space:nowrap;font-weight:600;z-index:2}
+  table.data th.l,table.data td.l{text-align:left}
+  table.data td{padding:5px 9px;text-align:right;border-bottom:1px solid #eee;font-variant-numeric:tabular-nums;
+    white-space:nowrap}
+  table.data tr:hover td{background:#fbf6e7}
+  .hl{background:#fff2cc !important}
+  .ctrlrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}
+  .ctrlrow input[type=search]{padding:7px 10px;border:1px solid var(--line);border-radius:6px;
+    font-size:14px;font-family:Helvetica,Arial,sans-serif;min-width:180px}
+  .chipbtn{font-family:Helvetica,Arial,sans-serif;font-size:12.5px;border:1px solid var(--line);
+    background:#fff;border-radius:20px;padding:5px 12px;cursor:pointer}
+  .chipbtn:hover{border-color:var(--rust);color:var(--rust)}
+  /* builder */
+  .builder{display:grid;grid-template-columns:300px 1fr;gap:22px;margin-top:10px}
+  .panel{background:#fff;border:1px solid var(--line);border-radius:10px;padding:18px}
+  .panel h4{margin:0 0 10px;font-family:Helvetica,Arial,sans-serif;font-size:14px;color:var(--slate);
+    letter-spacing:.03em;text-transform:uppercase}
+  .var{display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:7px;cursor:pointer;
+    font-family:Helvetica,Arial,sans-serif;font-size:14.5px}
+  .var:hover{background:#f6f6f0}
+  .var input{width:17px;height:17px;accent-color:var(--rust)}
+  .var .tag{margin-left:auto;font-size:11px;color:#fff;border-radius:4px;padding:1px 6px;font-weight:600}
+  .tag.cont{background:var(--blue)}.tag.dum{background:var(--gold)}
+  .presets{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 14px}
+  .presets button{font-family:Helvetica,Arial,sans-serif;font-size:12.5px;border:1px solid var(--line);
+    background:var(--cream);border-radius:6px;padding:6px 10px;cursor:pointer}
+  .presets button:hover{background:#f0e7c8}
+  table.out{border-collapse:collapse;width:100%;font-family:Helvetica,Arial,sans-serif;font-size:14px;margin:4px 0 12px}
+  table.out th{background:var(--slate);color:#fff;padding:8px 10px;text-align:right}
+  table.out th.l,table.out td.l{text-align:left}
+  table.out td{padding:7px 10px;text-align:right;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+  .sig{color:var(--sage);font-weight:700}
+  .fitline{display:flex;gap:18px;flex-wrap:wrap;font-family:Helvetica,Arial,sans-serif;font-size:14px;
+    background:var(--ink);color:#fff;border-radius:8px;padding:12px 16px;margin:6px 0}
+  .fitline b{color:#7FD1A4}
+  .linestbox{background:#F7F9FB;border:1px solid #cdddea;border-radius:8px;padding:12px 14px;margin:10px 0}
+  .linestbox .mono{font-size:13.5px;color:var(--blue);word-break:break-word}
+  .warn{background:#FDEDEC;border-left:4px solid var(--rust);padding:8px 12px;border-radius:4px;
+    font-size:14px;margin:8px 0}
+  .interp{font-style:italic;color:#444;font-size:15px;margin-top:6px}
+  footer{padding:30px 0 50px;color:#666;font-size:14px}
+  @media(max-width:720px){.builder{grid-template-columns:1fr}h1{font-size:28px}}
+</style>
+</head>
+<body>
+<nav><div class="wrap">
+  <b>Run it yourself</b>
+  <a href="#data">The data</a>
+  <a href="#simple">Simple</a>
+  <a href="#multiple">Multiple</a>
+  <a href="#dummies">Dummies</a>
+  <a href="#builder">Build your own</a>
+  <a href="index.html">Home</a>
+</div></nav>
+
+<header><div class="wrap">
+  <p class="eyebrow">Hands-on · Regression in Excel</p>
+  <h1>Run it yourself: regressions in Excel, step by step</h1>
+  <p>Open the workbook on one side and this page on the other. Copy each formula into the cell it
+    names, press Enter, and check your answer against the live result here. The last section lets you
+    build any regression you like and shows the exact Excel formula for it.</p>
+</div></header>
+
+<!-- DATA -->
+<section id="data"><div class="wrap">
+  <h2><span class="num">Step 0</span>Meet the data</h2>
+  <p>Every row is one exporter selling to one importer. The columns you will model are the logged
+    ones plus the three 0/1 dummies. Type a country in the box to find a pair, or click a model
+    button to highlight the columns it uses.</p>
+  <div class="ctrlrow">
+    <input id="q" type="search" placeholder="filter by country, e.g. Germany">
+    <span style="font-family:Helvetica,Arial,sans-serif;font-size:13px;color:#666">Highlight columns for:</span>
+    <button class="chipbtn" data-hl="lnD">Simple</button>
+    <button class="chipbtn" data-hl="lnD,lnGi,lnGj">Gravity</button>
+    <button class="chipbtn" data-hl="lnD,lnGi,lnGj,contig,lang,fta">Full + dummies</button>
+    <button class="chipbtn" data-hl="">Clear</button>
+  </div>
+  <div class="tablebox">
+    <table class="data" id="dtable"><thead><tr>
+      <th class="l">Exporter</th><th class="l">Importer</th>
+      <th data-c="lnT">ln_trade</th><th data-c="lnD">ln_dist</th>
+      <th data-c="lnGi">ln_gdp_i</th><th data-c="lnGj">ln_gdp_j</th>
+      <th data-c="contig">contiguity</th><th data-c="lang">common_lang</th><th data-c="fta">agree_fta</th>
+    </tr></thead><tbody id="dbody"></tbody></table>
+  </div>
+  <p style="font-size:14px;color:#666">Showing <span id="rowcount">200</span> of 200 pairs. In the
+    workbook this is the <span class="pill">Data</span> tab, columns I through O.</p>
+</div></section>
+
+<!-- SIMPLE -->
+<section id="simple"><div class="wrap">
+  <h2><span class="num">Walkthrough 1</span>Simple regression: does distance predict trade?</h2>
+  <p>One predictor. You do not even need a regression command. Three built-in functions do it. Put
+    these on a blank part of any sheet (we will use cells next to each label).</p>
+
+  <div class="step"><div class="n">1</div><div class="body">
+    <b>The slope</b> (the distance elasticity). Type:
+    <div class="formula"><code>=SLOPE(ln_trade, ln_dist)</code><button>Copy</button></div>
+    <div class="see">You should see <b id="s_slope">…</b>. Trade falls as distance rises, which is the
+      negative sign. Because both sides are logged, this is an elasticity: a 1% rise in distance goes
+      with about a <b id="s_slopepct">…</b> change in trade.</div>
+  </div></div>
+
+  <div class="step"><div class="n">2</div><div class="body">
+    <b>The intercept</b> and <b>R-squared</b>:
+    <div class="formula"><code>=INTERCEPT(ln_trade, ln_dist)
+=RSQ(ln_trade, ln_dist)</code><button>Copy</button></div>
+    <div class="see">Intercept <b id="s_int">…</b>, R-squared <b id="s_r2">…</b>. That R-squared is the
+      headline: distance alone explains only about <b id="s_r2pct">…</b> of why trade volumes differ.
+      A real effect that still leaves almost everything unexplained. That is the cue for Walkthrough 2.</div>
+  </div></div>
+
+  <div class="step"><div class="n">3</div><div class="body">
+    <b>Is the slope real?</b> Get its t-statistic. The slope's standard error hides in the LINEST block:
+    <div class="formula"><code>=INDEX(LINEST(ln_trade, ln_dist, TRUE, TRUE), 2, 1)</code><button>Copy</button></div>
+    <div class="see">Standard error <b id="s_se">…</b>. Divide the slope by it for the t-stat:
+      <b id="s_t">…</b>. As a rule of thumb, |t| above 2 means the effect is unlikely to be an accident.</div>
+  </div></div>
+
+  <div class="step"><div class="n">4</div><div class="body">
+    <b>The named ranges.</b> Those names (<span class="pill">ln_trade</span>, <span class="pill">ln_dist</span>)
+    already exist in the workbook, which is why the formulas read so cleanly. You can also point at the
+    raw columns: <span class="pill">Data!I2:I201</span> for ln_trade, <span class="pill">Data!J2:J201</span>
+    for ln_dist.
+  </div></div>
+</div></section>
+
+<!-- MULTIPLE -->
+<section id="multiple"><div class="wrap">
+  <h2><span class="num">Walkthrough 2</span>Multiple regression: the gravity equation</h2>
+  <p>Add the two economies' sizes. With more than one predictor, <span class="pill">SLOPE</span> will
+    not serve. The tool is <span class="pill">LINEST</span>, which returns a whole block at once.</p>
+
+  <div class="step"><div class="n">1</div><div class="body">
+    <b>Select a 5-row by 4-column block first</b> (for 3 predictors you get 4 columns), then type the
+    formula and press <b>Ctrl+Shift+Enter</b> on older Excel, or just Enter on Excel 365:
+    <div class="formula"><code>=LINEST(ln_trade, X_grav, TRUE, TRUE)</code><button>Copy</button></div>
+    <div class="see"><span class="pill">X_grav</span> is the named block <span class="pill">Data!J2:L201</span>
+      = ln_dist, ln_gdp_i, ln_gdp_j sitting in three adjacent columns. LINEST needs the X columns to be
+      next to each other, which is why the Data tab is arranged that way.</div>
+  </div></div>
+
+  <div class="step"><div class="n">2</div><div class="body">
+    <b>Mind the reversal.</b> LINEST returns coefficients right to left, with the intercept last. So for
+    <span class="pill">X_grav</span> the top row reads: ln_gdp_j, then ln_gdp_i, then ln_dist, then the
+    intercept. Pull each one cleanly with INDEX:
+    <div class="formula"><code>=INDEX(LINEST(ln_trade,X_grav,TRUE,TRUE),1,3)   'ln_dist coef
+=INDEX(LINEST(ln_trade,X_grav,TRUE,TRUE),1,2)   'ln_gdp_i coef
+=INDEX(LINEST(ln_trade,X_grav,TRUE,TRUE),1,1)   'ln_gdp_j coef
+=INDEX(LINEST(ln_trade,X_grav,TRUE,TRUE),1,4)   'intercept</code><button>Copy</button></div>
+    <div class="see">You should get ln_dist <b id="m_d">…</b>, ln_gdp_i <b id="m_gi">…</b>,
+      ln_gdp_j <b id="m_gj">…</b>. Both GDP elasticities land near 1, exactly what gravity predicts.</div>
+  </div></div>
+
+  <div class="step"><div class="n">3</div><div class="body">
+    <b>R-squared, the payoff.</b> It sits in row 3, column 1 of the block:
+    <div class="formula"><code>=INDEX(LINEST(ln_trade,X_grav,TRUE,TRUE),3,1)</code><button>Copy</button></div>
+    <div class="see">R-squared jumps to <b id="m_r2">…</b>, up from about 0.06 with distance alone.
+      Economic size was the missing piece. Each coefficient now reads as a partial effect: what that
+      variable does holding the others fixed.</div>
+  </div></div>
+</div></section>
+
+<!-- DUMMIES -->
+<section id="dummies"><div class="wrap">
+  <h2><span class="num">Walkthrough 3</span>Dummy variables: borders, language, trade deals</h2>
+  <p>Not everything is a quantity. A dummy is 1 when something is true and 0 when it is not. You add it
+    to the regression like any other column. Because trade is in logs, a dummy's coefficient reads as a
+    percentage gap between the two groups.</p>
+
+  <div class="step"><div class="n">1</div><div class="body">
+    <b>Run the full model</b> over six predictors. The block is now 5 rows by 7 columns:
+    <div class="formula"><code>=LINEST(ln_trade, X_full, TRUE, TRUE)</code><button>Copy</button></div>
+    <div class="see"><span class="pill">X_full</span> = <span class="pill">Data!J2:O201</span>, which adds
+      contiguity, common_language and agree_fta to the three logged variables.</div>
+  </div></div>
+
+  <div class="step"><div class="n">2</div><div class="body">
+    <b>Read a dummy as a percentage.</b> The trade-agreement coefficient is the last X column, so it is
+    column 1 of the LINEST block. Pull it, then convert:
+    <div class="formula"><code>=INDEX(LINEST(ln_trade,X_full,TRUE,TRUE),1,1)   'agree_fta coef
+=EXP(INDEX(LINEST(ln_trade,X_full,TRUE,TRUE),1,1))-1   'exact % effect</code><button>Copy</button></div>
+    <div class="see">The coefficient is about <b id="d_fta">…</b>. A small coefficient is roughly
+      coef &times; 100 percent; for larger ones use the exact <span class="pill">EXP(b)-1</span>, which here
+      is about <b id="d_ftapct">…</b>. A trade agreement goes with trade more than tripling.</div>
+  </div></div>
+
+  <div class="step"><div class="n">3</div><div class="body">
+    <b>When a sign surprises you.</b> The shared-border coefficient comes out <b id="d_contig">…</b>,
+    which looks backwards. With only 200 pairs the few neighbors are also short-distance and high-GDP,
+    so once those are controlled the leftover border term is estimated off very little. The lesson is to
+    get more data and look harder, not to report that borders cut trade. Real data argues back.
+  </div></div>
+</div></section>
+
+<!-- BUILDER -->
+<section id="builder"><div class="wrap">
+  <h2><span class="num">Your turn</span>Build any regression</h2>
+  <p>Tick the predictors you want. The page runs the regression on all 200 real rows right here, the
+    same numbers Excel's LINEST would give, and writes out the exact formula to type. Start from a
+    preset, then add or drop a variable and watch what happens to R-squared and to each coefficient.</p>
+
+  <div class="presets">
+    <button data-set="lnD">Distance only</button>
+    <button data-set="lnGi,lnGj">Size only</button>
+    <button data-set="lnD,lnGi,lnGj">Gravity (3)</button>
+    <button data-set="lnD,lnGi,lnGj,contig,lang,fta">Full (6)</button>
+    <button data-set="lnD,fta">Distance + trade deal</button>
+  </div>
+
+  <div class="builder">
+    <div class="panel">
+      <h4>Predictors</h4>
+      <label class="var"><input type="checkbox" value="lnD"><span>ln_dist</span><span class="tag cont">log</span></label>
+      <label class="var"><input type="checkbox" value="lnGi"><span>ln_gdp_i</span><span class="tag cont">log</span></label>
+      <label class="var"><input type="checkbox" value="lnGj"><span>ln_gdp_j</span><span class="tag cont">log</span></label>
+      <label class="var"><input type="checkbox" value="contig"><span>contiguity</span><span class="tag dum">0/1</span></label>
+      <label class="var"><input type="checkbox" value="lang"><span>common_language</span><span class="tag dum">0/1</span></label>
+      <label class="var"><input type="checkbox" value="fta"><span>agree_fta</span><span class="tag dum">0/1</span></label>
+      <p style="font-size:12.5px;color:#777;margin-top:12px">Outcome is always <b>ln_trade</b>.
+        "log" predictors give elasticities; "0/1" dummies give percentage effects.</p>
+    </div>
+
+    <div class="panel" style="background:var(--paper);border:none;padding:0">
+      <div id="b_warn"></div>
+      <div class="linestbox">
+        <div style="font-family:Helvetica,Arial,sans-serif;font-size:12px;color:#666;margin-bottom:4px">EXCEL FORMULA FOR THIS MODEL</div>
+        <div class="mono" id="b_formula">pick at least one predictor</div>
+      </div>
+      <table class="out"><thead><tr>
+        <th class="l">Term</th><th>Coefficient</th><th>Std err</th><th>t-stat</th><th>% effect</th>
+      </tr></thead><tbody id="b_body"></tbody></table>
+      <div class="fitline" id="b_fit"></div>
+      <div class="interp" id="b_interp"></div>
+    </div>
+  </div>
+</div></section>
+
+<footer><div class="wrap">
+  <p>Part of the <a href="index.html">Gravity Trade Workbook</a>. Every figure on this page is computed
+    live from the same 200 rows in the workbook, and matches an independent Python (statsmodels) run.
+    Built by Dr. Ian Helfrich with AI assistance.</p>
+</div></footer>
+
+<script src="assets/gravity_data.js"></script>
+<script>
+/* ---------- tiny matrix toolkit ---------- */
+const T = A => A[0].map((_,j)=>A.map(r=>r[j]));
+const mul = (A,B)=>A.map(r=>B[0].map((_,j)=>r.reduce((s,v,k)=>s+v*B[k][j],0)));
+function inv(M){ // Gauss-Jordan
+  const n=M.length, A=M.map((r,i)=>[...r,...r.map((_,j)=>i===j?1:0)]);
+  for(let i=0;i<n;i++){
+    let p=i; for(let r=i+1;r<n;r++) if(Math.abs(A[r][i])>Math.abs(A[p][i])) p=r;
+    [A[i],A[p]]=[A[p],A[i]];
+    const d=A[i][i]; for(let j=0;j<2*n;j++) A[i][j]/=d;
+    for(let r=0;r<n;r++) if(r!==i){const f=A[r][i]; for(let j=0;j<2*n;j++) A[r][j]-=f*A[i][j];}
+  }
+  return A.map(r=>r.slice(n));
+}
+/* ---------- OLS on selected keys ---------- */
+const COLLETTER={lnD:'J',lnGi:'K',lnGj:'L',contig:'M',lang:'N',fta:'O'};
+const COLIDX   ={lnD:0, lnGi:1, lnGj:2, contig:3, lang:4, fta:5};
+const LABEL    ={lnD:'ln_dist',lnGi:'ln_gdp_i',lnGj:'ln_gdp_j',contig:'contiguity',lang:'common_language',fta:'agree_fta'};
+const ISDUM    ={contig:1,lang:1,fta:1};
+function ols(keys){
+  const n=GRAVITY.length, k=keys.length;
+  const y=GRAVITY.map(r=>[r.lnT]);
+  const X=GRAVITY.map(r=>[1,...keys.map(kk=>r[kk])]);
+  const Xt=T(X), XtX=mul(Xt,X), XtXi=inv(XtX), beta=mul(mul(XtXi,Xt),y).map(r=>r[0]);
+  const yhat=X.map(r=>r.reduce((s,v,j)=>s+v*beta[j],0));
+  const ybar=y.reduce((s,r)=>s+r[0],0)/n;
+  let rss=0,tss=0; for(let i=0;i<n;i++){rss+=(y[i][0]-yhat[i])**2; tss+=(y[i][0]-ybar)**2;}
+  const df=n-k-1, sig2=rss/df;
+  const se=beta.map((_,j)=>Math.sqrt(sig2*XtXi[j][j]));
+  const t=beta.map((b,j)=>b/se[j]);
+  const r2=1-rss/tss, adj=1-(1-r2)*(n-1)/df, F=((tss-rss)/k)/(rss/df);
+  return {n,k,beta,se,t,r2,adj,F,terms:['Intercept',...keys]};
+}
+const f4=x=>x.toFixed(4), f2=x=>x.toFixed(2), f3=x=>x.toFixed(3);
+const stars=t=>{const a=Math.abs(t); return a>2.58?'***':a>1.96?'**':a>1.64?'*':'';};
+
+/* ---------- data table ---------- */
+const dbody=document.getElementById('dbody');
+function renderTable(filter){
+  const f=(filter||'').toLowerCase();
+  let rows=GRAVITY;
+  if(f) rows=rows.filter(r=>r.ci.toLowerCase().includes(f)||r.cj.toLowerCase().includes(f));
+  dbody.innerHTML=rows.map(r=>`<tr>
+    <td class="l">${r.ci}</td><td class="l">${r.cj}</td>
+    <td data-c="lnT">${r.lnT.toFixed(2)}</td><td data-c="lnD">${r.lnD.toFixed(2)}</td>
+    <td data-c="lnGi">${r.lnGi.toFixed(2)}</td><td data-c="lnGj">${r.lnGj.toFixed(2)}</td>
+    <td data-c="contig">${r.contig}</td><td data-c="lang">${r.lang}</td><td data-c="fta">${r.fta}</td>
+  </tr>`).join('');
+  document.getElementById('rowcount').textContent=rows.length;
+  applyHL();
+}
+let HLSET=new Set();
+function applyHL(){
+  document.querySelectorAll('#dtable [data-c]').forEach(el=>{
+    el.classList.toggle('hl', HLSET.has(el.getAttribute('data-c')));
+  });
+}
+document.getElementById('q').addEventListener('input',e=>renderTable(e.target.value));
+document.querySelectorAll('[data-hl]').forEach(b=>b.addEventListener('click',()=>{
+  HLSET=new Set((b.getAttribute('data-hl')||'').split(',').filter(Boolean)); applyHL();
+}));
+
+/* ---------- fill walkthrough live values ---------- */
+function fillStatics(){
+  const m1=ols(['lnD']);
+  document.getElementById('s_slope').textContent=f4(m1.beta[1]);
+  document.getElementById('s_slopepct').textContent=(m1.beta[1]*1).toFixed(2)+'% (roughly '+Math.round(m1.beta[1]*100)+'% per doubling-ish)';
+  document.getElementById('s_slopepct').textContent='about '+(m1.beta[1]).toFixed(2)+'% per 1% farther';
+  document.getElementById('s_int').textContent=f4(m1.beta[0]);
+  document.getElementById('s_r2').textContent=f4(m1.r2);
+  document.getElementById('s_r2pct').textContent=(m1.r2*100).toFixed(0)+'%';
+  document.getElementById('s_se').textContent=f4(m1.se[1]);
+  document.getElementById('s_t').textContent=f3(m1.t[1]);
+  const m2=ols(['lnD','lnGi','lnGj']);
+  document.getElementById('m_d').textContent=f4(m2.beta[1]);
+  document.getElementById('m_gi').textContent=f4(m2.beta[2]);
+  document.getElementById('m_gj').textContent=f4(m2.beta[3]);
+  document.getElementById('m_r2').textContent=f4(m2.r2);
+  const m3=ols(['lnD','lnGi','lnGj','contig','lang','fta']);
+  const fta=m3.beta[6], contig=m3.beta[4];
+  document.getElementById('d_fta').textContent=f4(fta);
+  document.getElementById('d_ftapct').textContent='+'+((Math.exp(fta)-1)*100).toFixed(0)+'%';
+  document.getElementById('d_contig').textContent=f4(contig)+(contig<0?' (negative)':'');
+}
+
+/* ---------- builder ---------- */
+const boxes=[...document.querySelectorAll('.panel .var input')];
+function selectedKeys(){
+  // keep canonical order so the X-range / reversal logic is predictable
+  const order=['lnD','lnGi','lnGj','contig','lang','fta'];
+  return order.filter(k=>boxes.find(b=>b.value===k && b.checked));
+}
+function excelFormula(keys){
+  const idx=keys.map(k=>COLIDX[k]).sort((a,b)=>a-b);
+  const contiguous=idx.every((v,i)=>i===0||v===idx[i-1]+1);
+  if(keys.length===1){
+    const L=COLLETTER[keys[0]];
+    return {html:`=SLOPE(ln_trade, Data!${L}2:${L}201)  &nbsp;<span style="color:#888">'or use the named range</span>`, ok:true};
+  }
+  if(contiguous){
+    const lo=COLLETTER[Object.keys(COLIDX).find(k=>COLIDX[k]===idx[0])];
+    const hi=COLLETTER[Object.keys(COLIDX).find(k=>COLIDX[k]===idx[idx.length-1])];
+    return {html:`=LINEST(ln_trade, Data!${lo}2:${hi}201, TRUE, TRUE)`, ok:true};
+  }
+  return {html:`=LINEST(ln_trade, &lt;your X block&gt;, TRUE, TRUE)`, ok:false,
+          cols:keys.map(k=>`Data!${COLLETTER[k]}`).join(', ')};
+}
+function runBuilder(){
+  const keys=selectedKeys();
+  const warn=document.getElementById('b_warn');
+  const body=document.getElementById('b_body');
+  const fit=document.getElementById('b_fit');
+  const interp=document.getElementById('b_interp');
+  if(keys.length===0){
+    document.getElementById('b_formula').textContent='pick at least one predictor';
+    warn.innerHTML=''; body.innerHTML=''; fit.innerHTML=''; interp.textContent=''; return;
+  }
+  const ef=excelFormula(keys);
+  document.getElementById('b_formula').innerHTML=ef.html;
+  warn.innerHTML = ef.ok ? '' :
+    `<div class="warn">These columns (${ef.cols}) are <b>not adjacent</b> in the Data tab, and LINEST
+     needs one solid block. In Excel, copy them into adjacent helper columns first, then run LINEST over
+     that block. The results below are exactly what you would get.</div>`;
+  const m=ols(keys);
+  body.innerHTML=m.terms.map((term,j)=>{
+    const isDum=j>0 && ISDUM[keys[j-1]];
+    const name=j===0?'Intercept':LABEL[keys[j-1]];
+    const eff=isDum?((Math.exp(m.beta[j])-1)*100).toFixed(0)+'%':'';
+    return `<tr><td class="l">${name}</td><td>${f4(m.beta[j])}</td><td>${f4(m.se[j])}</td>
+      <td>${f3(m.t[j])} <span class="sig">${stars(m.t[j])}</span></td><td>${eff}</td></tr>`;
+  }).join('');
+  fit.innerHTML=`<span>R&sup2; <b>${f4(m.r2)}</b></span><span>Adj R&sup2; <b>${f4(m.adj)}</b></span>
+    <span>F <b>${f2(m.F)}</b></span><span>n <b>${m.n}</b></span><span>predictors <b>${m.k}</b></span>`;
+  // interpretation
+  const bits=[];
+  keys.forEach((k,i)=>{
+    const b=m.beta[i+1];
+    if(ISDUM[k]){const p=((Math.exp(b)-1)*100).toFixed(0); bits.push(`${LABEL[k]} goes with about ${p>0?'+':''}${p}% trade`);}
+    else bits.push(`a 1% rise in ${LABEL[k].replace('ln_','')} maps to about ${b.toFixed(2)}% trade`);
+  });
+  interp.textContent='Reading: '+bits.join('; ')+`. The model explains ${(m.r2*100).toFixed(0)}% of the variation in log trade.`;
+}
+boxes.forEach(b=>b.addEventListener('change',runBuilder));
+document.querySelectorAll('.presets button').forEach(btn=>btn.addEventListener('click',()=>{
+  const set=new Set((btn.getAttribute('data-set')||'').split(',').filter(Boolean));
+  boxes.forEach(b=>b.checked=set.has(b.value)); runBuilder();
+}));
+
+/* ---------- copy buttons ---------- */
+document.querySelectorAll('.formula button').forEach(btn=>btn.addEventListener('click',()=>{
+  const code=btn.previousElementSibling.textContent;
+  navigator.clipboard.writeText(code).then(()=>{
+    const old=btn.textContent; btn.textContent='Copied'; btn.classList.add('ok');
+    setTimeout(()=>{btn.textContent=old; btn.classList.remove('ok');},1200);
+  });
+}));
+
+/* ---------- init ---------- */
+renderTable('');
+fillStatics();
+boxes.forEach(b=>{if(['lnD','lnGi','lnGj'].includes(b.value)) b.checked=true;});
+runBuilder();
+</script>
+</body>
+</html>
